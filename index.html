@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title></title>
+    <title>Player</title>
     
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://snrt.player.easybroadcast.io">
@@ -45,26 +45,6 @@
             z-index: 1;
         }
         
-        .fullscreen-message {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            z-index: 10;
-            pointer-events: none;
-            animation: fadeOut 3s forwards;
-        }
-        
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-        
-        
         .loading-image {
             position: absolute;
             top: 0;
@@ -89,40 +69,26 @@
             opacity: 0;
             pointer-events: none;
         }
-        
-        
-        .live-badge {
+
+        /* --- User Counter Style --- */
+        #user-counter {
             position: absolute;
             top: 15px;
-            left: 15px;
-            background: #e74c3c;
+            right: 15px;
             color: white;
-            padding: 5px 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 16px; /* Adjusted size for better balance */
+            z-index: 5;
+            opacity: 0.6; /* Semi-transparent for better UX */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            
+            /* NEW: Flexbox for aligning icon and number */
             display: flex;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            z-index: 5;
+            gap: 6px; /* Adds a small space between icon and number */
         }
-        
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background: white;
-            border-radius: 50%;
-            margin-right: 6px;
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        
-        
+
     </style>
 </head>
 <body>
@@ -132,19 +98,16 @@
     </div>
     
     <div id="player-container">
-        <div class="fullscreen-message"></div>
         
-       
-        <div class="live-badge">
-            <div class="live-dot"></div>
-            LIVE
+        <!-- User Counter Icon & Number -->
+        <div id="user-counter">
+            <i class="fas fa-users"></i>
+            <!-- NEW: Span to display the viewer count -->
+            <span id="viewer-count"></span> 
         </div>
-        
-       
-        
        
         <iframe id="player-frame" 
-                src="https://snrt.player.easybroadcast.io/events/73_arrabia_hthcj4p" 
+                src="https://snrt.player.easybroadcast.io/events/73_arrabia_hthcj4p"
                 allow="autoplay; fullscreen"
                 onload="onPlayerLoad()"></iframe>
     </div>
@@ -154,50 +117,56 @@
             const playerFrame = document.getElementById('player-frame');
             const loadingImage = document.getElementById('loadingImage');
             
-          
             playerFrame.style.width = '100%';
             playerFrame.style.height = '100%';
             
-          
-            function requestFullScreen() {
-                const element = document.documentElement;
-                
-                if (element.requestFullscreen) {
-                    element.requestFullscreen().catch(err => {
-                        console.log('Fullscreen request failed:', err);
-                    });
-                } else if (element.mozRequestFullScreen) {
-                    element.mozRequestFullScreen();
-                } else if (element.webkitRequestFullscreen) {
-                    element.webkitRequestFullscreen();
-                } else if (element.msRequestFullscreen) {
-                    element.msRequestFullscreen();
+            // --- Logic to hide/show counter on fullscreen change ---
+            const userCounter = document.getElementById('user-counter');
+
+            function handleFullscreenChange() {
+                if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+                    userCounter.style.display = 'none';
+                } else {
+                    userCounter.style.display = 'flex'; // Use flex to match CSS
                 }
             }
+
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+            // --- NEW: DYNAMIC VIEWER COUNT LOGIC ---
+            const viewerCountElement = document.getElementById('viewer-count');
+            const minViewers = 50; // Minimum viewers to show
+            const maxViewers = 100; // Maximum viewers to show
+
+            // 1. Set the initial random viewer count
+            let currentViewers = Math.floor(Math.random() * (maxViewers - minViewers + 1)) + minViewers;
+            viewerCountElement.textContent = currentViewers;
+
+            // 2. Create a function to update the count
+            function updateViewerCount() {
+                // Fluctuate by a small random number (e.g., -2, -1, 0, 1, or 2)
+                const change = Math.floor(Math.random() * 5) - 2; 
+                let newViewers = currentViewers + change;
+
+                // 3. Keep the count within the defined min/max range
+                newViewers = Math.max(minViewers, Math.min(maxViewers, newViewers));
+                
+                currentViewers = newViewers;
+                viewerCountElement.textContent = currentViewers;
+            }
+
+            // 4. Update the count every 3 seconds (3000 milliseconds)
+            setInterval(updateViewerCount, 3000);
             
-            
-            setTimeout(requestFullScreen, 1000);
-            
-            
-            setTimeout(() => {
-                const message = document.querySelector('.fullscreen-message');
-                if (message) message.style.display = 'none';
-            }, 3000);
         });
-        
-        
-        
         
         function onPlayerLoad() {
             const loadingImage = document.getElementById('loadingImage');
-            
-            
             loadingImage.classList.add('hidden');
-            
-            
         }
     </script>
 </body>
 </html>
-
-
